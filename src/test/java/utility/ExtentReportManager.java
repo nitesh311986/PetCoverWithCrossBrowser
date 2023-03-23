@@ -10,6 +10,8 @@ import org.testng.ITestListener;
 import org.testng.ITestResult;
 import testBase.TestBase;
 
+import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,6 +22,15 @@ public class ExtentReportManager implements ITestListener {
     public ExtentTest test;
 
     String repName;
+    public CustomScreenRecorder screenRecorder;
+    public ExtentReportManager() {
+        try {
+            //this is the location that we are going to save the recorded file
+            screenRecorder = new CustomScreenRecorder(new File(System.getProperty("user.dir") + "/target/screen-records"));
+        } catch (IOException | AWTException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
     public void onStart(ITestContext testContext) {
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());// time stamp
@@ -39,16 +50,23 @@ public class ExtentReportManager implements ITestListener {
         extent.setSystemInfo("Operating System", System.getProperty("os.name"));
         extent.setSystemInfo("User Name", System.getProperty("user.name"));
         extent.setSystemInfo("Environemnt", "QA");
+
     }
 
     @Override
     public void onTestStart(ITestResult iTestResult) {
+        try {
+            screenRecorder.startRecording(iTestResult.getClass().getSimpleName() + "-" + iTestResult.getMethod().getMethodName(), true);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
 
     }
 
     public void onTestSuccess(ITestResult result) {
         test = extent.createTest(result.getName());
         test.log(Status.PASS, "Test Passed");
+        stopScreenRecording(false);
     }
 
     public void onTestFailure(ITestResult result) {
@@ -100,5 +118,12 @@ public class ExtentReportManager implements ITestListener {
          * }
          * catch(Exception e) { e.printStackTrace(); }
          */
+    }
+    private void stopScreenRecording(boolean keepFile) {
+        try {
+            screenRecorder.stopRecording(keepFile);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
